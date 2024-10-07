@@ -1,0 +1,6 @@
+# DOING A BUILD
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+
+# REDOING A BUILD
+unlink result
+nix-store --delete /nix/store/9j0x8yvi1y8aajiggahxqvmlsf9wpnvk-fwbuilder-6.0.0-rc1
