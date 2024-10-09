@@ -3,21 +3,21 @@
   makeDesktopItem,
   copyDesktopItems,
   fetchFromGitHub,
-  python3Packages,
-  makeWrapper,
+  python311Packages,
+  python311Full,
   fetchPypi,
 }:
 let
 
   desktopItem = makeDesktopItem {
     name = "tuxemon";
-    exec = "";
+    exec = "tuxemon";
     desktopName = "Tuxemon";
     icon = "tuxemon";
     categories = [];
   };
 
-  pyscroll = python3Packages.buildPythonPackage rec {
+  pyscroll = python311Packages.buildPythonPackage rec {
     pname = "pyscroll";
     version = "2.31";
     src = fetchPypi {
@@ -26,7 +26,7 @@ let
     };
   };
 
-  neteria = python3Packages.buildPythonPackage rec {
+  neteria = python311Packages.buildPythonPackage rec {
     pname = "neteria";
     version = "1.0.2";
     src = fetchPypi {
@@ -35,7 +35,7 @@ let
     };
   };
 
-  pygame_menu = python3Packages.buildPythonPackage rec {
+  pygame_menu = python311Packages.buildPythonPackage rec {
     pname = "pygame-menu";
     version = "4.4.3";
     src = fetchPypi {
@@ -44,16 +44,38 @@ let
     };
   };
 in 
-python3Packages.buildPythonPackage rec {
+python311Packages.buildPythonPackage rec {
   pname = "tuxemon";
-  version = "0.4.34";
+  version = "v0.4.34";
 
   src = fetchFromGitHub {
     owner = "Tuxemon";
     repo = "Tuxemon";
-    rev = "main";
+    rev = "v0.4.34";
     sha256 = "1xk16kflgm0sc9zhc5480nqm7rdnskz6wz7045rciabk61plmz19";
   };
+
+  propagatedBuildInputs = [
+    python311Packages.requests
+    python311Packages.babel
+    python311Packages.cbor
+    neteria
+    python311Packages.pillow
+    python311Packages.pygame
+    pyscroll
+    python311Packages.pytmx
+    python311Packages.requests
+    python311Packages.natsort
+    python311Packages.pyyaml
+    python311Packages.prompt-toolkit
+    pygame_menu
+    python311Packages.pydantic_1
+  ];
+
+  nativeBuildInputs = [
+    copyDesktopItems
+    python311Packages.python
+  ];
 
   format = "other";
 
@@ -62,38 +84,21 @@ python3Packages.buildPythonPackage rec {
   dontStrip = true;
   dontWrapGApps = true;
 
-  nativeBuildInputs = [
-    makeWrapper
-    copyDesktopItems
-  ];
-
-
   installPhase = ''
     runHook preInstall
 
+    mkdir -p $out/share
+    cp -r * $out/share/
     mkdir -p $out/bin
-    cp -r * $out/bin/
 
     runHook postInstall
   '';
 
-  propagatedBuildInputs = [
-    python3Packages.requests
-    python3Packages.babel
-    python3Packages.cbor
-    
-    neteria
-    python3Packages.pillow
-    python3Packages.pygame
-    pyscroll
-    python3Packages.pytmx
-    python3Packages.requests
-    python3Packages.natsort
-    python3Packages.pyyaml
-    python3Packages.prompt-toolkit
-    pygame_menu
-    python3Packages.pydantic
-  ];
+  postFixup = ''
+    makeWrapper ${python311Full.interpreter} $out/bin/start \
+      --set PYTHONPATH "$PYTHONPATH:$out/share/" \
+      --add-flags "$out/share/run_tuxemon.py"
+  '';
 
   desktopItems = [ ];
 
@@ -103,6 +108,6 @@ python3Packages.buildPythonPackage rec {
     mainProgram = "";
     license = licenses.mit;
     maintainers = with maintainers; [hans-chrstn];
-    platforms = [ "x86_64-linux" ];
+    platforms = platforms.linux;
   };
 }

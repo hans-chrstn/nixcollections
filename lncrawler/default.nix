@@ -6,14 +6,15 @@
   makeWrapper,
   fetchPypi,
   python311Packages,
+  python311Full,
 }:
 let 
   apps = import ./packages.nix { inherit fetchPypi python311Packages fetchFromGitHub; };
   desktopItem = makeDesktopItem {
-    name = "lncrawl";
-    exec = "lncrawl";
-    desktopName = "lncrawl";
-    icon = "";
+    name = "lncrawler";
+    exec = "lncrawler";
+    desktopName = "Light Novel Crawler";
+    icon = "lncrawl";
     categories = [];
   };
 in
@@ -30,10 +31,10 @@ python311Packages.buildPythonPackage rec {
 
   format = "other";
 
-  # dontBuild = true;
-  # dontConfigure = true;
+  dontBuild = true;
+  dontConfigure = true;
   dontStrip = true;
-  # dontWrapGApps = true;
+  dontWrapGApps = true;
 
   nativeBuildInputs = [
     makeWrapper
@@ -72,52 +73,43 @@ python311Packages.buildPythonPackage rec {
     python311Packages.wheel
     python311Packages.black
     python311Packages.flake8
-    # python311Packages.tk-tools
-    # python311Packages.pyinstaller
     python311Packages.setuptools
     python311Packages.discordpy
     python311Packages.python-telegram-bot
     python311Packages.websockets
   ];
 
+  # installPhase = ''
+  #   runHook preInstall
+  #   mkdir -p $out/bin
+  #   cp -r * $out/bin/
+  #   install -D $out/bin/res/lncrawl.ico $out/share/icons/lncrawl.ico
+  #   makeWrapper ${python311Full.interpreter} $out/bin/lncrawler \
+  #     --set PYTHONPATH "$PYTHONPATH:$out/bin/lncrawl/__init__.py" \
+  #     --add-flags "$out/bin/lncrawl"
+  #   runHook postInstall
+  # '';
+
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin
-    mkdir -p $out/share/lncrawler/
-    cp -r * $out/share/lncrawler/
-    cat > $out/share/lncrawler/lncrawl.sh <<EOF
-    #!/usr/bin/env bash
-    mkdir -p ~/.lncrawl/sources
-    for item in $out/share/lncrawler/*; do
-      if [ "\$(basename "$\item")" == "sources" ]; then 
-        continue
-      fi
-      ln -sf "\$item" ~/.lncrawl
-    done
-    cd ~/.lncrawl
-    python3 -m lncrawl
+    mkdir -p $out/share/lncrawl
+    cp -r * $out/share/lncrawl
 
-    EOF
-    chmod +x $out/share/lncrawler/lncrawl.sh
+    install -D $out/share/lncrawl/res/lncrawl.ico $out/share/icons/lncrawl.ico
 
+    makeWrapper ${python311Full.interpreter} $out/bin/lncrawler \
+      --set PYTHONPATH "$PYTHONPATH:$out/share/lncrawl/" \
+      --add-flags "$out/share/lncrawl/lncrawl"
     runHook postInstall
   '';
-
-  postFixup = ''
-    makeWrapper $out/share/lncrawler/lncrawl.sh $out/bin/lncrawler \
-    --add-flags $out/share/lncrawler/lncrawl/__init__.py \
-    --set LD_LIBRARY_PATH ${lib.makeLibraryPath propagatedBuildInputs} \
-    --prefix PATH : ${lib.makeBinPath propagatedBuildInputs} \
-    --prefix PYTHONPATH : "$PYTHONPATH"
-  '';
-
 
   desktopItems = desktopItem;
 
   meta = with lib; {
-    homepage = "";
-    description = "";
-    mainProgram = "";
+    homepage = "https://github.com/dipu-bd/lightnovel-crawler";
+    description = "Generate and download e-books from online sources.";
+    mainProgram = "lncrawler";
     license = licenses.mit;
     maintainers = with maintainers; [hans-chrstn];
     platforms = platforms.linux;
